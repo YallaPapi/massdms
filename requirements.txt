@@ -1,0 +1,25 @@
+# Instagram Automation Tool Dependencies
+
+# Core dependencies
+requests>=2.28.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+schedule>=1.2.0
+# Install agency-swarm from GitHub
+agency-swarm @ git+https://github.com/your-username/agency-swarm.git
+
+# Browser automation
+selenium>=4.10.0
+undetected-chromedriver>=3.5.0
+webdriver-manager>=4.0.0
+
+# Data handling
+pandas>=2.0.0
+
+# Utilities
+tqdm>=4.65.0
+colorama>=0.4.6
+pillow>=10.0.0  # For image processing
+
+# API integrations
+# Add specific API client libraries as needed

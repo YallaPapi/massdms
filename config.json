@@ -1,0 +1,52 @@
+{
+  "database": {
+    "type": "json",
+    "path": "data/database.json"
+  },
+  "adspower": {
+    "api_url": "http://localhost:50325",
+    "group_id": "0"
+  },
+  "verification": {
+    "daisysms": {
+      "api_key": "",
+      "service": "instagram"
+    },
+    "email": {
+      "provider": "temp_mail"
+    }
+  },
+  "cupidbot": {
+    "enabled": true,
+    "default_personality": "friendly",
+    "default_response_style": "casual"
+  },
+  "accounts": [],
+  "campaigns": [],
+  "posts": [],
+  "logging": {
+    "level": "INFO",
+    "file": "instagram_automation.log"
+  },
+  "proxy": {
+    "enabled": false,
+    "type": "http",
+    "host": "",
+    "port": "",
+    "username": "",
+    "password": ""
+  },
+  "security": {
+    "delay_between_actions": {
+      "min": 1.0,
+      "max": 3.0
+    },
+    "max_actions_per_day": 100,
+    "max_messages_per_day": 50,
+    "max_posts_per_day": 5
+  },
+  "ui": {
+    "theme": "light",
+    "language": "en"
+  }
+}
