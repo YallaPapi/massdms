@@ -103,6 +103,9 @@ def parse_arguments():
     
     # Run command
     run_parser = subparsers.add_parser('run', help='Run the tool')
+    run_parser.add_argument('--continuous', action='store_true', help='Run in continuous mode')
+    run_parser.add_argument('--interval', type=int, default=60, help='Interval in seconds between checks in continuous mode')
+    run_parser.add_argument('--max-runtime', type=int, help='Maximum runtime in seconds for continuous mode')
     
     args = parser.parse_args()
     
@@ -144,7 +147,7 @@ def main():
     elif args.command == 'post':
         process_post_commands(args, tool)
     elif args.command == 'run':
-        run_tool(tool)
+        run_tool(tool, args)
     else:
         logger.error(f"Unknown command: {args.command}")
         sys.exit(1)
@@ -334,14 +337,40 @@ def process_post_commands(args, tool):
         logger.info("Available post commands: create, publish, track")
         sys.exit(1)
 
-def run_tool(tool):
-    """Run the tool in continuous mode."""
+def run_tool(tool, args):
+    """Run the tool in continuous or one-shot mode."""
     logger.info("Starting Instagram Automation Tool")
-    result = tool.run()
     
-    if result and result.get("status") == "error":
+    # Extract run parameters
+    continuous = getattr(args, 'continuous', False)
+    interval = getattr(args, 'interval', 60)
+    max_runtime = getattr(args, 'max_runtime', None)
+    
+    # Run mode info
+    if continuous:
+        logger.info(f"Running in continuous mode with {interval}s interval")
+        if max_runtime:
+            logger.info(f"Will stop after {max_runtime}s")
+    else:
+        logger.info("Running in one-shot mode")
+    
+    # Run the tool
+    result = tool.run(
+        continuous=continuous,
+        interval=interval,
+        max_runtime=max_runtime
+    )
+    
+    # Process result
+    if result.get("status") == "error":
         logger.error(f"Error running tool: {result.get('message')}")
         sys.exit(1)
+    elif result.get("status") == "stopped":
+        logger.info(f"Tool was stopped: {result.get('message')}")
+    else:
+        logger.info(f"Tool completed successfully: {result.get('message')}")
+        if continuous:
+            logger.info(f"Completed {result.get('cycles', 0)} cycles")
 
 if __name__ == "__main__":
     main()

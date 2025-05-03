@@ -14,8 +14,8 @@ import json
 import requests
 from typing import Dict, Any, List, Optional
 
-# Import from main module instead of agency_swarm
-from instagram_automation_tool import Agent, Task
+# Import from utils instead to avoid circular imports
+from utils.agent_base import Agent, Task
 
 logger = logging.getLogger(__name__)
 
@@ -52,35 +52,82 @@ class BrowserManagerAgent(Agent):
         """
         logger.info(f"Creating browser profile: {profile_name}")
         
-        # In a real implementation, this would call the AdsPower API
-        # Example API call:
-        # response = requests.post(
-        #     f"{self.adspower_api_url}/api/v1/user/create",
-        #     json={
-        #         "name": profile_name,
-        #         "group_id": "0",
-        #         "user_proxy_config": {
-        #             "proxy_soft": "no_proxy",
-        #         },
-        #         "fingerprint_config": {
-        #             "webrtc": "real",
-        #             "canvas": "noise",
-        #             "audio": "noise",
-        #             "webgl": "noise"
-        #         }
-        #     }
-        # )
-        # result = response.json()
-        
-        # Simulate API response
-        profile_id = f"profile_{int(time.time())}_{random.randint(1000, 9999)}"
-        
-        profile = {
-            "profile_id": profile_id,
-            "name": profile_name,
-            "status": "created",
-            "created_at": time.time()
-        }
+        try:
+            # In a real implementation, this would call the AdsPower API
+            # Example API call:
+            """
+            response = requests.post(
+                f"{self.adspower_api_url}/api/v1/user/create",
+                json={
+                    "name": profile_name,
+                    "group_id": "0",
+                    "user_proxy_config": {
+                        "proxy_soft": "no_proxy",
+                    },
+                    "fingerprint_config": {
+                        "webrtc": "real",
+                        "canvas": "noise",
+                        "audio": "noise",
+                        "webgl": "noise"
+                    }
+                },
+                timeout=30  # Add timeout to prevent hanging
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"AdsPower API error: {response.status_code} - {response.text}")
+                return {
+                    "status": "error",
+                    "message": f"AdsPower API returned error: {response.status_code}",
+                    "error_details": response.text
+                }
+                
+            result = response.json()
+            
+            if result.get("code") != 0:
+                logger.error(f"AdsPower API error: {result.get('code')} - {result.get('msg')}")
+                return {
+                    "status": "error",
+                    "message": f"AdsPower API returned error: {result.get('msg')}",
+                    "error_details": result
+                }
+                
+            profile_id = result.get("data", {}).get("id")
+            """
+            
+            # Simulate API response for now
+            profile_id = f"profile_{int(time.time())}_{random.randint(1000, 9999)}"
+            
+            profile = {
+                "profile_id": profile_id,
+                "name": profile_name,
+                "status": "created",
+                "created_at": time.time()
+            }
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error connecting to AdsPower API: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Error connecting to AdsPower API: {str(e)}",
+                "error_type": type(e).__name__
+            }
+            
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            logger.error(f"Error processing API response: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Error processing API response: {str(e)}",
+                "error_type": type(e).__name__
+            }
+            
+        except Exception as e:
+            logger.error(f"Unexpected error creating browser profile: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Unexpected error creating browser profile: {str(e)}",
+                "error_type": type(e).__name__
+            }
         
         logger.info(f"Browser profile created: {profile_id}")
         return profile

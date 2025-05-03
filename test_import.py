@@ -64,7 +64,12 @@ def test_instagram_automation_tool():
     try:
         # Test importing the tool
         print("  Testing import...")
-        from instagram_automation_tool import InstagramAutomationTool
+        try:
+            # Try importing from the package first (recommended)
+            from instagram_automation_tool import InstagramAutomationTool
+        except ImportError:
+            # Fallback to direct import from the file
+            from instagram_automation_tool_improved import InstagramAutomationTool
         print("  ✓ Import successful")
         
         # Test initializing the tool

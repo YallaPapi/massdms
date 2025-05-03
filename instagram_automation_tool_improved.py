@@ -11,6 +11,7 @@ consistent API and better error handling.
 import os
 import sys
 import json
+import time
 import logging
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -26,18 +27,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Try to import agency-swarm
-try:
-    from agency_swarm import Agency, Agent
-except ImportError:
-    logger.error("agency-swarm package not found. Please install it using: pip install agency-swarm")
-    sys.exit(1)
+# Import from our utils for agency and agent base classes
+from utils.agent_base import Agency, Agent, Task
 
 # Import our custom agents
 from agents.account_manager import AccountManagerAgent
 from agents.messaging_agent import MessagingAgent
 from agents.content_poster import ContentPosterAgent
 from agents.browser_manager import BrowserManagerAgent
+
+# Import utilities
+from utils.config_loader import load_config
+from utils.database import Database
 
 # Import utilities
 from utils.config_loader import load_config
@@ -336,21 +337,154 @@ class InstagramAutomationTool:
     
     # Main Application Methods
     
-    def run(self):
-        """Run the Instagram Automation Tool."""
+    def run(self, continuous: bool = False, interval: int = 60, max_runtime: Optional[int] = None):
+        """Run the Instagram Automation Tool.
+        
+        Args:
+            continuous: Whether to run in continuous mode (periodic checks for scheduled tasks)
+            interval: Interval in seconds between checks in continuous mode
+            max_runtime: Maximum runtime in seconds for continuous mode (None for indefinite)
+        
+        Returns:
+            Dict containing run status
+        """
         logger.info("Starting Instagram Automation Tool")
+        
         try:
-            # Main application logic here
+            # Print initial status
+            account_count = len(self.config.get('accounts', []))
+            campaign_count = len(self.config.get('campaigns', []))
+            post_count = len(self.config.get('posts', []))
             
-            # Example: Print status
             print("Instagram Automation Tool is running")
-            print(f"Configured with {len(self.config.get('accounts', []))} accounts")
+            print(f"Configured with {account_count} accounts, {campaign_count} campaigns, and {post_count} posts")
             
-            # Here you would implement the main loop or server
-            # that handles user commands, scheduled tasks, etc.
+            # Initialize runtime tracking
+            start_time = datetime.now()
+            should_continue = True
+            run_count = 0
+            
+            # Main loop
+            while should_continue:
+                run_count += 1
+                logger.info(f"Run cycle {run_count} started")
+                
+                # 1. Process scheduled posts
+                self._process_scheduled_posts()
+                
+                # 2. Process scheduled campaigns
+                self._process_scheduled_campaigns()
+                
+                # 3. Check account health for all accounts
+                self._check_accounts_health()
+                
+                logger.info(f"Run cycle {run_count} completed")
+                
+                # Check if we should continue running
+                if not continuous:
+                    should_continue = False
+                elif max_runtime and (datetime.now() - start_time).total_seconds() > max_runtime:
+                    logger.info(f"Maximum runtime of {max_runtime} seconds reached, stopping")
+                    should_continue = False
+                else:
+                    logger.info(f"Waiting {interval} seconds until next check")
+                    time.sleep(interval)
+            
+            return {"status": "success", "message": "Instagram Automation Tool run completed", "cycles": run_count}
+            
+        except KeyboardInterrupt:
+            logger.info("Instagram Automation Tool stopped by user")
+            return {"status": "stopped", "message": "Instagram Automation Tool stopped by user"}
+            
         except Exception as e:
             logger.error(f"Error running Instagram Automation Tool: {str(e)}")
             return {"status": "error", "message": f"Failed to run Instagram Automation Tool: {str(e)}"}
+    
+    def _process_scheduled_posts(self):
+        """Process all scheduled posts that are due."""
+        logger.info("Processing scheduled posts")
+        
+        # In a production implementation, this would:
+        # 1. Query the database for posts with status "scheduled" and scheduled_time <= now
+        # 2. For each post, call the publish_post method
+        
+        # Simulated implementation
+        try:
+            # Get all posts from config
+            posts = self.config.get("posts", [])
+            now = datetime.now().timestamp()
+            
+            for post in posts:
+                # Skip posts that are not scheduled or already published
+                if post.get("status") != "scheduled":
+                    continue
+                    
+                # Check if scheduled time has passed
+                scheduled_time = post.get("scheduled_time")
+                if scheduled_time and scheduled_time <= now:
+                    logger.info(f"Publishing scheduled post: {post.get('id')}")
+                    self.publish_post(post.get("id"))
+        
+        except Exception as e:
+            logger.error(f"Error processing scheduled posts: {str(e)}")
+    
+    def _process_scheduled_campaigns(self):
+        """Process all scheduled campaigns that are due."""
+        logger.info("Processing scheduled campaigns")
+        
+        # In a production implementation, this would:
+        # 1. Query the database for campaigns with status "scheduled" and scheduled_start <= now
+        # 2. For each campaign, call the start_campaign method
+        
+        # Simulated implementation
+        try:
+            # Get all campaigns from config
+            campaigns = self.config.get("campaigns", [])
+            now = datetime.now().timestamp()
+            
+            for campaign in campaigns:
+                # Skip campaigns that are not scheduled or already active
+                if campaign.get("status") != "scheduled":
+                    continue
+                    
+                # Check if scheduled time has passed
+                scheduled_start = campaign.get("scheduled_start")
+                if scheduled_start and scheduled_start <= now:
+                    logger.info(f"Starting scheduled campaign: {campaign.get('id')}")
+                    self.start_campaign(campaign.get("id"))
+        
+        except Exception as e:
+            logger.error(f"Error processing scheduled campaigns: {str(e)}")
+    
+    def _check_accounts_health(self):
+        """Check health of all accounts."""
+        logger.info("Checking accounts health")
+        
+        # In a production implementation, this would:
+        # 1. Query the database for all active accounts
+        # 2. For each account, call the check_account_health method
+        # 3. Take action based on health status (e.g., disable accounts with issues)
+        
+        # Simulated implementation
+        try:
+            # Get all accounts from config
+            accounts = self.config.get("accounts", [])
+            
+            for account in accounts:
+                # Skip accounts that are not active
+                if account.get("status") != "active":
+                    continue
+                    
+                logger.info(f"Checking health for account: {account.get('id')}")
+                health_result = self.check_account_health(account.get("id"))
+                
+                # Take action based on health status
+                if health_result.get("health", {}).get("status") != "healthy":
+                    logger.warning(f"Account {account.get('id')} has health issues: {health_result.get('health', {}).get('status')}")
+                    # Here you would implement logic to handle unhealthy accounts
+        
+        except Exception as e:
+            logger.error(f"Error checking accounts health: {str(e)}")
 
 if __name__ == "__main__":
     # Create and run the tool

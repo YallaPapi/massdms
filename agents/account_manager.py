@@ -13,8 +13,8 @@ import time
 import random
 from typing import Dict, Any, Optional, List
 
-# Import from main module instead of agency_swarm
-from instagram_automation_tool import Agent, Task
+# Import from utils instead to avoid circular imports
+from utils.agent_base import Agent, Task
 
 logger = logging.getLogger(__name__)
 
